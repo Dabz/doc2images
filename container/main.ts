@@ -24,7 +24,7 @@ const storage = multer.diskStorage({
   filename: function (req, file, cb) {
     void req;
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + '.docx');
+    cb(null, file.fieldname + '-' + uniqueSuffix + '.' + file.originalname);
   },
 });
 
@@ -42,19 +42,25 @@ app.post('/{*path}', upload.single('file'), async (req, res) => {
     return
   }
 
-  const pdfOutputPath = `${tempPDFDir}/${Date.now() + '-' + Math.round(Math.random() * 1e9)}.pdf`;
+  let pdfOutputPath = `${tempPDFDir}/${Date.now() + '-' + Math.round(Math.random() * 1e9)}.pdf`;
   const imageDirectory = `${tempOutputDir}/${Date.now() + '-' + Math.round(Math.random() * 1e9)}/`;
 
-  const pdfProcess = spawnSync(`pandoc`, ["-o", pdfOutputPath, req.file?.path])
-  if (pdfProcess.status !== 0) {
-    res.send(`Pandoc failed\n  exit code: ${pdfProcess.status}\n  stdout: ${pdfProcess.stdout}\n  stderr: ${pdfProcess.stderr}`);
-    return;
+  if (req.file.originalname.endsWith(".pdf")) {
+    pdfOutputPath = req.file.path;
+  } else {
+    const pdfProcess = spawnSync(`pandoc`, ["--pdf-engine", "typst", "-o", pdfOutputPath, req.file?.path])
+    if (pdfProcess.status !== 0) {
+      res.status(500);
+      res.send(`Pandoc failed\n  exit code: ${pdfProcess.status}\n  signal: ${pdfProcess.signal}\n  stdout: ${pdfProcess.stdout}\n  stderr: ${pdfProcess.stderr}`);
+      return;
+    }
   }
 
   fs.mkdirSync(imageDirectory, { recursive: true });
   const convertProcess = spawnSync(`convert`, ["-density", '300', "-background", "white", "-alpha", "remove", pdfOutputPath, `${imageDirectory}/page-%03d.png`])
   if (convertProcess.status !== 0) {
-    res.send(`Convert failed\n  exit code: ${convertProcess.status}\n  stdout: ${convertProcess.stdout}\n  stderr: ${convertProcess.stderr}`);
+    res.status(500);
+    res.send(`Convert failed\n  exit code: ${convertProcess.status}\n  signal: ${convertProcess.signal}\n  stdout: ${convertProcess.stdout}\n  stderr: ${convertProcess.stderr}`);
     return;
   }
 
@@ -68,5 +74,9 @@ app.post('/{*path}', upload.single('file'), async (req, res) => {
 })
 
 app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`);
+  console.log(`App listening on port ${port}`);
+});
+
+process.on('SIGINT', function() {
+  process.exit();
 });

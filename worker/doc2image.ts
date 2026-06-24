@@ -2,7 +2,7 @@ import { Container } from '@cloudflare/containers';
 
 export class Doc2ImageContainer extends Container {
   defaultPort = 8080;
-  sleepAfter = '10s';
+  sleepAfter = '10m';
   envVars = {
     PORT: '8080',
   };

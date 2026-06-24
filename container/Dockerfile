@@ -1,4 +1,4 @@
-FROM pandoc/latex:3-ubuntu
+FROM pandoc/typst:3-ubuntu
 
 ENV PORT=8080
 EXPOSE 8080
@@ -8,6 +8,13 @@ ENV NODE_VERSION=26
 RUN apt update -y
 RUN apt install -y curl
 RUN apt install -y imagemagick
+RUN apt install -y weasyprint
+RUN apt install -y \
+        fontconfig \
+        libfreetype6 \
+        fonts-freefont-ttf
+RUN apt install -y ttf-mscorefonts-installer
+RUN fc-cache -f
 
 # NVM 
 ENV NVM_DIR=/root/.nvm

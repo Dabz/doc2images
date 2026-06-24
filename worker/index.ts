@@ -10,7 +10,7 @@ export default {
 
     if (url.pathname.startsWith("/api/doc2image") && request.method === "POST") {
       const container = env.Doc2Image.getByName(url.pathname);
-      return container.fetch(request);
+      return container.fetch(request, { signal: AbortSignal.timeout(200000) });
     }
     if (url.pathname.startsWith("/api/upload") && request.method === "POST") {
       try {
