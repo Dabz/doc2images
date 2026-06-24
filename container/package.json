@@ -1,0 +1,23 @@
+{
+  "name": "doc2pdf",
+  "version": "0.0.1",
+  "description": "Simple wrapper around Pandoc for docx to PDF conversion",
+  "license": "ISC",
+  "author": "Damien Gasparina",
+  "main": "main.ts",
+  "type": "module",
+  "scripts": {
+    "dev": "node main.ts",
+    "run": "node main.ts"
+  },
+  "dependencies": {
+    "archiver": "^8.0.0",
+    "express": "^5.2.1",
+    "multer": "^2.2.0"
+  },
+  "devDependencies": {
+    "@types/archiver": "^8.0.0",
+    "@types/express": "^5.0.6",
+    "@types/multer": "^2.1.0"
+  }
+}
