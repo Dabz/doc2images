@@ -14,6 +14,13 @@ RUN apt install -y \
         libfreetype6 \
         fonts-freefont-ttf
 RUN apt install -y ttf-mscorefonts-installer
+RUN apt install -y libreoffice-writer \
+    libreoffice-calc \
+    libreoffice-impress \
+    fonts-liberation \
+    fontconfig \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 RUN fc-cache -f
 
 # NVM 

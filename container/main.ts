@@ -42,16 +42,16 @@ app.post('/{*path}', upload.single('file'), async (req, res) => {
     return
   }
 
-  let pdfOutputPath = `${tempPDFDir}/${Date.now() + '-' + Math.round(Math.random() * 1e9)}.pdf`;
+  let pdfOutputPath = `${req.file.path.replace(/\.[a-zA-Z0-9]+$/, "")}.pdf`
   const imageDirectory = `${tempOutputDir}/${Date.now() + '-' + Math.round(Math.random() * 1e9)}/`;
 
   if (req.file.originalname.endsWith(".pdf")) {
     pdfOutputPath = req.file.path;
   } else {
-    const pdfProcess = spawnSync(`pandoc`, ["--pdf-engine", "typst", "-o", pdfOutputPath, req.file?.path])
+    const pdfProcess = spawnSync(`libreoffice`, ["--headless", "--convert-to", "pdf", "--outdir", tempUploadDir, req.file?.path])
     if (pdfProcess.status !== 0) {
       res.status(500);
-      res.send(`Pandoc failed\n  exit code: ${pdfProcess.status}\n  signal: ${pdfProcess.signal}\n  stdout: ${pdfProcess.stdout}\n  stderr: ${pdfProcess.stderr}`);
+      res.send(`Libreoffice failed\n  exit code: ${pdfProcess.status}\n  signal: ${pdfProcess.signal}\n  stdout: ${pdfProcess.stdout}\n  stderr: ${pdfProcess.stderr}`);
       return;
     }
   }
