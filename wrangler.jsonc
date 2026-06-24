@@ -3,38 +3,50 @@
  * https://developers.cloudflare.com/workers/wrangler/configuration/
  */
 {
-  "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "doc2image",
-  "main": "worker/index.ts",
-  "compatibility_date": "2026-06-23",
-  "assets": {
-    "not_found_handling": "single-page-application",
-  },
-  "observability": {
-    "enabled": true,
-  },
-  "upload_source_maps": true,
-  "compatibility_flags": ["nodejs_compat"],
-  "placement": { "mode": "smart" },
-  "containers": [
-    {
-      "max_instances": 10,
-      "class_name": "Doc2ImageContainer",
-      "image": "./container/Dockerfile",
-    },
-  ],
-  "durable_objects": {
-    "bindings": [
-      {
-        "name": "Doc2Image",
-        "class_name": "Doc2ImageContainer",
-      },
-    ],
-  },
-  "migrations": [
-    {
-      "tag": "v1",
-      "new_sqlite_classes": ["Doc2ImageContainer"],
-    },
-  ],
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "doc2image",
+	"main": "worker/index.ts",
+	"compatibility_date": "2026-06-23",
+	"assets": {
+		"not_found_handling": "single-page-application",
+	},
+	"observability": {
+		"enabled": true,
+	},
+	"upload_source_maps": true,
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+	"placement": {
+		"mode": "smart"
+	},
+	"containers": [
+		{
+			"max_instances": 10,
+			"class_name": "Doc2ImageContainer",
+			"image": "./container/Dockerfile",
+		},
+	],
+	"durable_objects": {
+		"bindings": [
+			{
+				"name": "Doc2Image",
+				"class_name": "Doc2ImageContainer",
+			},
+		],
+	},
+	"migrations": [
+		{
+			"tag": "v1",
+			"new_sqlite_classes": [
+				"Doc2ImageContainer"
+			],
+		},
+	],
+	"r2_buckets": [
+		{
+			"bucket_name": "doc2images",
+			"binding": "doc2images"
+		}
+	],
 }

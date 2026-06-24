@@ -1,54 +1,212 @@
 html,
 body {
-  height: 100%;
+  min-height: 100%;
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  color: #192033;
+  background:
+    radial-gradient(
+      circle at top left,
+      rgba(111, 91, 255, 0.22),
+      transparent 34rem
+    ),
+    linear-gradient(135deg, #f8fbff 0%, #eef3ff 45%, #f8fafc 100%);
 }
 
 .document {
-  width: 100%;
-  height: 100%;
+  width: min(1120px, calc(100% - 32px));
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 48px 0;
   display: flex;
+  flex-direction: column;
+  gap: 32px;
 }
+
 .document-upload {
-  width: 80%;
-  height: 80%;
-  border-radius: 25px;
-  margin: auto;
-  border: 10px dashed blue;
-  justify-content: center;
+  width: 100%;
+  min-height: 360px;
+  margin: auto 0;
+  border: 2px dashed rgba(80, 92, 255, 0.45);
+  border-radius: 32px;
   display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.82),
+      rgba(255, 255, 255, 0.62)
+    ),
+    radial-gradient(
+      circle at 50% 0%,
+      rgba(80, 92, 255, 0.16),
+      transparent 28rem
+    );
+  box-shadow: 0 24px 70px rgba(35, 42, 92, 0.14);
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease,
+    background 160ms ease;
 }
 
 .document-upload h1 {
-  margin: auto;
+  max-width: 680px;
+  margin: 0;
+  padding: 24px;
   text-align: center;
+  font-size: clamp(2.2rem, 7vw, 5rem);
+  line-height: 0.98;
+  letter-spacing: -0.08em;
+  color: #12182b;
+  animation: fadeIn 1s ease-in-out;
+  pointer-events: none;
 }
 
 .document-upload-dragging {
-  border-color: red;
+  border-color: #6f5bff;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 32px 90px rgba(80, 92, 255, 0.24);
+  transform: translateY(-3px) scale(1.01);
 }
 
 .documents-render {
-  width: 80%;
+  width: 100%;
   display: flex;
   flex-direction: column;
+  gap: 24px;
 }
 
 .document-render {
-  padding: 20px;
-  border: 1px dotted blue;
-  margin-bottom: 20px;
+  padding: 28px;
+  border: 1px solid rgba(117, 127, 152, 0.18);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 18px 55px rgba(35, 42, 92, 0.1);
+}
+
+.document-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.r2-button {
+  margin-left: auto;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.85rem 1.15rem;
+  color: #fff;
+  font: inherit;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  cursor: pointer;
+  background: linear-gradient(135deg, #ff7a1a, #ff4f8b 52%, #6f5bff);
+  box-shadow:
+    0 12px 28px rgba(255, 79, 139, 0.26),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  transition:
+    box-shadow 160ms ease,
+    transform 160ms ease,
+    filter 160ms ease;
+  animation: fadeIn 1s ease-in-out;
+}
+
+.r2-button:hover {
+  filter: saturate(1.08) brightness(1.04);
+  box-shadow:
+    0 16px 36px rgba(255, 79, 139, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  transform: translateY(-2px);
+}
+
+.r2-button:active {
+  transform: translateY(0);
+}
+
+.r2-button:focus-visible {
+  outline: 3px solid rgba(111, 91, 255, 0.3);
+  outline-offset: 3px;
+}
+
+.document-render h1,
+.document-render h2 {
+  margin: 0 0 16px;
+  letter-spacing: -0.04em;
+}
+
+.document-render h1 {
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+}
+
+.document-render h2 {
+  margin-top: 28px;
+  color: #596179;
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .document-render img {
-  max-height: 400px;
+  width: 100%;
+  max-height: 640px;
+  object-fit: contain;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 12px 40px rgba(35, 42, 92, 0.12);
 }
 
 .code {
   line-height: 100%;
-  background-color: #eee;
-  padding: 0.2em;
-  letter-spacing: -0.05em;
+  background: #12182b;
+  color: #fff;
+  padding: 0.08em 0.16em 0.12em;
+  border-radius: 0.18em;
+  letter-spacing: -0.04em;
   word-break: normal;
-  /border-radius: 5px;/
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 720px) {
+  .document {
+    width: min(100% - 24px, 1120px);
+    padding: 24px 0;
+  }
+
+  .document-upload {
+    min-height: 280px;
+    border-radius: 24px;
+  }
+
+  .document-render {
+    padding: 18px;
+    border-radius: 22px;
+  }
+
+  .document-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .r2-button {
+    width: 100%;
+    margin-left: 0;
+  }
 }

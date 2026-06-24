@@ -1,73 +1,75 @@
-# React + TypeScript + Vite
+# Doc2Image
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Doc2Image is a sample Cloudflare application that converts uploaded `.docx` documents into page images and can upload the generated images to R2.
+This project is intended as an example and is not production-ready as-is.
 
-Currently, two official plugins are available:
+## How It Works
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+1. A React/Vite single-page app accepts `.docx` files by drag and drop.
+2. The Worker routes conversion requests to a Cloudflare Container.
+3. The container uses Pandoc to convert `.docx` to PDF.
+4. The container uses ImageMagick to render the PDF pages as PNG images.
+5. The generated PNG files are returned as a ZIP archive.
+6. The app previews the images and can upload them to an R2 bucket.
 
-## React Compiler
+## Project Structure
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- `src/` - React single-page app.
+- `worker/` - Cloudflare Worker entrypoint and container binding.
+- `container/` - Dockerized document conversion service.
+- `wrangler.jsonc` - Cloudflare Worker, Container, Durable Object, and R2 configuration.
+- `vite.config.ts` - Vite configuration with the Cloudflare plugin.
 
-## Expanding the ESLint configuration
+## Requirements
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- Node.js and npm.
+- Wrangler access to a Cloudflare account that supports Workers, Containers, Durable Objects, and R2.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+The container image installs its own runtime dependencies, including Pandoc and ImageMagick.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## Development
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+Install dependencies:
+
+```sh
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Start the local development server:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```sh
+npm run dev
 ```
+
+Build the project:
+
+```sh
+npm run build
+```
+
+Run linting:
+
+```sh
+npm run lint
+```
+
+Preview a production build locally:
+
+```sh
+npm run preview
+```
+
+## Deployment
+
+Deploy the Worker, assets, and container configuration with:
+
+```sh
+npm run deploy
+```
+
+If your R2 bucket name differs from `doc2images`, update `wrangler.jsonc` before deploying.
+
+## API Routes
+
+- `POST /api/doc2image` - accepts a multipart form upload with a `file` field containing a `.docx` document and returns a ZIP of generated PNG files.
+- `POST /api/upload` - accepts multipart form data and writes generated image files to the configured R2 bucket.
