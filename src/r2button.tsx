@@ -19,6 +19,11 @@ function R2Button({ docImages }: { docImages: DocImages }) {
       method: "POST",
       body: data,
     }).then(async (res) => {
+      if (res.status === 401) {
+        const body = await res.json() as { loginUrl?: string };
+        window.location.href = body.loginUrl ?? "/api/login";
+        return;
+      }
       if (!res.ok) {
         setStatus("Failed");
         setTimeout(() => setStatus("Pending"), 20_000);
