@@ -90,9 +90,12 @@ async function redirectToCloudflareOAuth(request: Request) {
   );
 
   const requestUrl = new URL(request.url);
-  const redirectUri = `${requestUrl.protocol}//${requestUrl.hostname}:${requestUrl.port}/callback`;
+  const redirectUri = `${requestUrl.protocol}//${requestUrl.hostname}${requestUrl.port ? ':' + requestUrl.port : ''}/callback`;
   const scope = R2_OAUTH_SCOPES;
-  const state = oidc.randomState();
+  let state = getCookie(request, "cf_oauth_state");
+  if (!state) {
+    state = oidc.randomState();
+  }
   const codeVerifier: string = oidc.randomPKCECodeVerifier()
   const codeChallenge: string = await oidc.calculatePKCECodeChallenge(codeVerifier)
 
