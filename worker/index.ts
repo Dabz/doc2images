@@ -91,6 +91,7 @@ async function redirectToCloudflareOAuth(request: Request) {
 
   const requestUrl = new URL(request.url);
   const redirectUri = `${requestUrl.protocol}//${requestUrl.hostname}${requestUrl.port ? ':' + requestUrl.port : ''}/callback`;
+  const isPopup = requestUrl.searchParams.get("popup") === "1";
   const scope = R2_OAUTH_SCOPES;
   let state = getCookie(request, "cf_oauth_state");
   if (!state) {
@@ -114,6 +115,7 @@ async function redirectToCloudflareOAuth(request: Request) {
       ["Location", redirectTo.href],
       ["Set-Cookie", serializeCookie("cf_oauth_state", state, request)],
       ["Set-Cookie", serializeCookie("cf_oauth_verifier", codeVerifier, request)],
+      ["Set-Cookie", isPopup ? serializeCookie("cf_oauth_popup", "1", request) : expireCookie("cf_oauth_popup", request)],
     ]),
   });
 }
@@ -128,6 +130,7 @@ async function handleCloudflareOAuthCallback(request: Request) {
   const url = new URL(request.url);
   const state = getCookie(request, "cf_oauth_state")
   const codeVerifier = getCookie(request, "cf_oauth_verifier")
+  const isPopup = getCookie(request, "cf_oauth_popup") === "1";
   try {
     const tokens: oidc.TokenEndpointResponse = await oidc.authorizationCodeGrant(
       OIDC_CONFIG,
@@ -138,15 +141,19 @@ async function handleCloudflareOAuthCallback(request: Request) {
       },
     )
 
-    return new Response(null, {
-      status: 302,
-      headers: new Headers([
-        ["Location", "/"],
-        ["Set-Cookie", serializeCookie("cf_oauth_token", tokens.access_token, request, tokens.expires_in)],
-        ["Set-Cookie", expireCookie("cf_oauth_state", request)],
-        ["Set-Cookie", expireCookie("cf_oauth_verifier", request)],
-      ]),
-    });
+    const headers = new Headers([
+      ["Set-Cookie", serializeCookie("cf_oauth_token", tokens.access_token, request, tokens.expires_in)],
+      ["Set-Cookie", expireCookie("cf_oauth_state", request)],
+      ["Set-Cookie", expireCookie("cf_oauth_verifier", request)],
+      ["Set-Cookie", expireCookie("cf_oauth_popup", request)],
+    ]);
+
+    if (isPopup) {
+      return oauthPopupResponse(url.origin, headers);
+    }
+
+    headers.set("Location", "/");
+    return new Response(null, { status: 302, headers });
   } catch (err) {
     console.error(err);
     return Response.json({
@@ -154,6 +161,24 @@ async function handleCloudflareOAuthCallback(request: Request) {
       "message": "Invalid token returned"
     }, { status: 500 })
   }
+}
+
+function oauthPopupResponse(origin: string, headers: Headers) {
+  headers.set("Content-Type", "text/html; charset=utf-8");
+  return new Response(`<!doctype html>
+<html>
+  <body>
+    <script>
+      if (window.opener) {
+        window.opener.postMessage({ type: "doc2image:oauth-complete" }, ${JSON.stringify(origin)});
+        window.close();
+      } else {
+        window.location.href = "/";
+      }
+    </script>
+    Authentication complete. You can close this window.
+  </body>
+</html>`, { headers });
 }
 
 async function getR2AccountId(accessToken: string) {
@@ -213,4 +238,3 @@ function clearOAuthCookieHeaders() {
 function encodeR2ObjectKey(key: string) {
   return key.split("/").map(encodeURIComponent).join("/");
 }
-
