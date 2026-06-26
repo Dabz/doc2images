@@ -1,14 +1,21 @@
 import { useState } from "react";
 import type { DocImages } from "./App";
 
-type Status = "Uploading" | "Done" | "Failed" | "Pending";
+type Status = "Uploading" | "Logging" | "Done" | "Failed" | "Pending";
 
 function R2Button({ docImages }: { docImages: DocImages }) {
   const [status, setStatus] = useState<Status>("Pending");
 
   async function uploadToR2(docImages: DocImages) {
     setStatus("Uploading");
-    await submitUpload(docImages, false);
+    try {
+      await submitUpload(docImages, false);
+    } catch (err) {
+      setStatus("Failed");
+      setTimeout(() => setStatus("Pending"), 20_000);
+      console.error("Error while uploading", err);
+      alert("Error while uploading to R2");
+    }
   }
 
   async function submitUpload(docImages: DocImages, hasRetriedAfterLogin: boolean) {
@@ -25,9 +32,10 @@ function R2Button({ docImages }: { docImages: DocImages }) {
     });
 
     if (res.status === 401 && !hasRetriedAfterLogin) {
-      const body = await res.json() as { loginUrl?: string };
       try {
-        await waitForOAuthPopup(body.loginUrl ?? "/api/login");
+        setStatus("Logging");
+        await waitForOAuthPopup("/login");
+        setStatus("Uploading");
         await submitUpload(docImages, true);
       } catch (err) {
         setStatus("Failed");
@@ -69,6 +77,11 @@ function R2Button({ docImages }: { docImages: DocImages }) {
       {status === "Failed" && (
         <button className="r2-button" disabled>
           Error uploading
+        </button>
+      )}
+      {status === "Logging" && (
+        <button className="r2-button" disabled>
+          Connecting to Cloudflare...
         </button>
       )}
     </>
