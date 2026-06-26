@@ -17,13 +17,14 @@ This project is intended as an example and is not production-ready as-is.
 - `src/` - React single-page app.
 - `worker/` - Cloudflare Worker entrypoint and container binding.
 - `container/` - Dockerized document conversion service.
-- `wrangler.jsonc` - Cloudflare Worker, Container, Durable Object, and R2 configuration.
+- `wrangler.jsonc` - Cloudflare Worker, Container, and Durable Object configuration.
 - `vite.config.ts` - Vite configuration with the Cloudflare plugin.
 
 ## Requirements
 
 - Node.js and npm.
 - Wrangler access to a Cloudflare account that supports Workers, Containers, Durable Objects, and R2.
+- `OAUTH_CLIENT_ID` and `OAUTH_SECRET` configured as Worker secrets.
 
 The container image installs its own runtime dependencies, including Pandoc and ImageMagick.
 
@@ -67,9 +68,18 @@ Deploy the Worker, assets, and container configuration with:
 npm run deploy
 ```
 
-If your R2 bucket name differs from `doc2images`, update `wrangler.jsonc` before deploying.
+The R2 upload flow uses Cloudflare OAuth rather than an R2 binding. The authorized account must contain a bucket named `doc2images`.
+
+## OAuth Flow
+
+R2 uploads are performed through the Cloudflare REST API using Cloudflare OAuth client.
+
+- `GET /login` starts a Cloudflare OAuth authorization-code flow.
+- `GET /callback` validates the token and exchange the Auth code for an access token.
 
 ## API Routes
 
 - `POST /api/doc2image` - accepts a multipart form upload with a `file` field containing a `.docx` document and returns a ZIP of generated PNG files.
-- `POST /api/upload` - accepts multipart form data and writes generated image files to the configured R2 bucket.
+- `GET /login` - starts Cloudflare OAuth for R2 access.
+- `GET /callback` - completes the OAuth code flow and stores the short-lived session cookie.
+- `POST /api/upload` - accepts multipart form data and writes generated image files to the `doc2images` R2 bucket through the Cloudflare REST API.

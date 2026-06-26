@@ -8,6 +8,7 @@
   "main": "worker/index.ts",
   "compatibility_date": "2026-06-23",
   "assets": {
+    "run_worker_first": ["/api/*", "/login", "/callback"],
     "not_found_handling": "single-page-application",
   },
   "observability": {
@@ -40,11 +41,7 @@
       "new_sqlite_classes": ["Doc2ImageContainer"],
     },
   ],
-  "r2_buckets": [
-    {
-      "bucket_name": "doc2images",
-      "binding": "doc2images",
-    },
-  ],
+  "secrets": {
+    "required": ["OAUTH_SECRET", "OAUTH_CLIENT_ID"],
+  },
 }
-

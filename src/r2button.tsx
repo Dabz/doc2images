@@ -1,13 +1,24 @@
 import { useState } from "react";
 import type { DocImages } from "./App";
 
-type Status = "Uploading" | "Done" | "Failed" | "Pending";
+type Status = "Uploading" | "Logging" | "Done" | "Failed" | "Pending";
 
 function R2Button({ docImages }: { docImages: DocImages }) {
   const [status, setStatus] = useState<Status>("Pending");
 
-  function uploadToR2(docImages: DocImages) {
+  async function uploadToR2(docImages: DocImages) {
     setStatus("Uploading");
+    try {
+      await submitUpload(docImages, false);
+    } catch (err) {
+      setStatus("Failed");
+      setTimeout(() => setStatus("Pending"), 20_000);
+      console.error("Error while uploading", err);
+      alert("Error while uploading to R2");
+    }
+  }
+
+  async function submitUpload(docImages: DocImages, hasRetriedAfterLogin: boolean) {
     const data = new FormData();
     data.append("filename", docImages.filename);
     for (const page of docImages.images) {
@@ -15,19 +26,35 @@ function R2Button({ docImages }: { docImages: DocImages }) {
       data.append(page.filename, file);
     }
 
-    fetch("/api/upload", {
+    const res = await fetch("/api/upload", {
       method: "POST",
       body: data,
-    }).then(async (res) => {
-      if (!res.ok) {
+    });
+
+    if (res.status === 401 && !hasRetriedAfterLogin) {
+      try {
+        setStatus("Logging");
+        await waitForOAuthPopup("/login");
+        setStatus("Uploading");
+        await submitUpload(docImages, true);
+      } catch (err) {
         setStatus("Failed");
         setTimeout(() => setStatus("Pending"), 20_000);
-        console.error("Error while uploading", res);
-        alert("Error while uploading to R2");
-        return;
+        console.error("OAuth popup failed", err);
+        alert("Log in to Cloudflare to upload to R2");
       }
-      setStatus("Done");
-    });
+      return;
+    }
+
+    if (!res.ok) {
+      setStatus("Failed");
+      setTimeout(() => setStatus("Pending"), 20_000);
+      console.error("Error while uploading", res);
+      alert("Error while uploading to R2");
+      return;
+    }
+
+    setStatus("Done");
   }
 
   return (
@@ -52,8 +79,50 @@ function R2Button({ docImages }: { docImages: DocImages }) {
           Error uploading
         </button>
       )}
+      {status === "Logging" && (
+        <button className="r2-button" disabled>
+          Connecting to Cloudflare...
+        </button>
+      )}
     </>
   );
+}
+
+function waitForOAuthPopup(loginUrl: string) {
+  const url = new URL(loginUrl, window.location.origin);
+  url.searchParams.set("popup", "1");
+  const popup = window.open(url.toString(), "doc2image-oauth", "popup,width=520,height=720");
+  if (!popup) return Promise.reject(new Error("OAuth popup was blocked"));
+
+  return new Promise<void>((resolve, reject) => {
+    const timeout = window.setTimeout(() => {
+      cleanup();
+      popup.close();
+      reject(new Error("OAuth popup timed out"));
+    }, 5 * 60_000);
+    const closedCheck = window.setInterval(() => {
+      if (popup.closed) {
+        cleanup();
+        reject(new Error("OAuth popup was closed"));
+      }
+    }, 500);
+
+    const onMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      if (event.data?.type !== "doc2image:oauth-complete") return;
+      cleanup();
+      resolve();
+    };
+
+    function cleanup() {
+      window.clearTimeout(timeout);
+      window.clearInterval(closedCheck);
+      window.removeEventListener("message", onMessage);
+    }
+
+    window.addEventListener("message", onMessage);
+    popup.focus();
+  });
 }
 
 export default R2Button;
