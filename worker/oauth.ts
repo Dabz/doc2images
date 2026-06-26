@@ -122,6 +122,6 @@ export function oauthPopupResponse(origin: string, headers: Headers) {
   );
 }
 
-export function getToken(request: Request): string {
+export function getToken(request: Request): string | undefined {
   return getCookie(request, Const.COOKIES_TOKEN);
 }

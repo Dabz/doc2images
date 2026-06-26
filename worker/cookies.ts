@@ -1,6 +1,6 @@
 import {Const} from "./const";
 
-export function getCookie(request: Request, name: string) {
+export function getCookie(request: Request, name: string): string | undefined {
   const cookie = request.headers.get("Cookie") ?? "";
   for (const part of cookie.split(";")) {
     const [key, ...value] = part.trim().split("=");
@@ -14,7 +14,7 @@ export function serializeCookie(
   value: string,
   request: Request,
   maxAge?: number,
-) {
+): string {
   const url = new URL(request.url);
   const secure = url.protocol === "https:" ? "; Secure" : "";
   const age = maxAge ? `; Max-Age=${maxAge}` : "";
@@ -27,7 +27,7 @@ export function expireCookie(name: string, request: Request) {
   return `${name}=; Path=/; HttpOnly; SameSite=Lax${secure}; Max-Age=0`;
 }
 
-export function clearOAuthCookieHeaders() {
+export function clearOAuthCookieHeaders(): Headers {
   return new Headers([
     [
       "Set-Cookie",
@@ -36,6 +36,6 @@ export function clearOAuthCookieHeaders() {
   ]);
 }
 
-export function encodeR2ObjectKey(key: string) {
+export function encodeR2ObjectKey(key: string): string {
   return key.split("/").map(encodeURIComponent).join("/");
 }
