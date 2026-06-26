@@ -16,7 +16,7 @@ export async function uploadToR2(
     return Response.json("Missing filename", { status: 400 });
   }
 
-  const accountId = await getR2AccountId(request);
+  const accountId = await getOrCreateR2Bucket(request);
   for (const [key, value] of formData.entries()) {
     if (key === "filename") continue;
     if (typeof value === "string") continue;
@@ -50,7 +50,7 @@ export async function uploadToR2(
   });
 }
 
-export async function getR2AccountId(request: Request) {
+export async function getOrCreateR2Bucket(request: Request) {
   const accessToken = getToken(request);
 
   const accountsResponse = await fetch(`${Const.CLOUDFLARE_API_URL}/accounts`, {
@@ -66,6 +66,8 @@ export async function getR2AccountId(request: Request) {
   const accounts = await accountsResponse.json<{
     result?: Array<{ id: string }>;
   }>();
+  let accountIdForBucketCreate: string | undefined;
+
   for (const account of accounts.result ?? []) {
     const bucketsResponse = await fetch(
       `${Const.CLOUDFLARE_API_URL}/accounts/${account.id}/r2/buckets?name_contains=${Const.R2_BUCKET_NAME}`,
@@ -75,6 +77,8 @@ export async function getR2AccountId(request: Request) {
     );
 
     if (!bucketsResponse.ok) continue;
+
+    accountIdForBucketCreate ??= account.id;
 
     const buckets = await bucketsResponse.json<{
       result?: { buckets?: Array<{ name?: string }> };
@@ -88,7 +92,29 @@ export async function getR2AccountId(request: Request) {
     }
   }
 
+  if (accountIdForBucketCreate) {
+    const createBucketResponse = await fetch(
+      `${Const.CLOUDFLARE_API_URL}/accounts/${accountIdForBucketCreate}/r2/buckets/${Const.R2_BUCKET_NAME}`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({}),
+      },
+    );
+
+    if (createBucketResponse.ok || createBucketResponse.status === 409) {
+      return accountIdForBucketCreate;
+    }
+
+    throw new Error(
+      `Unable to create R2 bucket ${Const.R2_BUCKET_NAME}: ${await createBucketResponse.text()}`,
+    );
+  }
+
   throw new Error(
-    `Could not find R2 bucket ${Const.R2_BUCKET_NAME} in authorized Cloudflare accounts`,
+    `Could not find or create R2 bucket ${Const.R2_BUCKET_NAME} in authorized Cloudflare accounts`,
   );
 }
